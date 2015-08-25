@@ -18,7 +18,7 @@ void setup() {
     nodes = new ArrayList();
     textFont(myfont);
     strokeWeight(5);
-    nodes.add(new Node(width/10,width/2,height/2,color(random(255),random(255),random(255))));
+    nodes.add(new Node(width/10,width/2,height/2,color(random(150,255),random(150,255),random(150,255))));
 }
 
  
@@ -39,7 +39,7 @@ void draw() {
     textAlign(CENTER,BOTTOM);
     textSize(width/45);
     fill(255);
-    text("Drag to create cell. Click cell to mitosis.",width/2,height);
+    text("Drag to create cell. Left click to split. Right click to kill.",width/2,height - 10);
     maxs = 0;
     mins = height;
     for (int i=nodes.size()-1; i>=0; i--) {
@@ -52,7 +52,7 @@ void draw() {
     if (se) {
       fill(0,0);
       stroke(255);
-      if ((sx + dist(sx,sy,mouseX,mouseY))>width||(sx - dist(sx,sy,mouseX,mouseY))<0||(sy + dist(sx,sy,mouseX,mouseY)) > height || (sy - dist(sx,sy,mouseX,mouseY)) < 0) {
+      if ((sx + dist(sx,sy,mouseX,mouseY))>width||(sx - dist(sx,sy,mouseX,mouseY))<0||(sy + dist(sx,sy,mouseX,mouseY)) > height || (sy - dist(sx,sy,mouseX,mouseY)) < 0 || dist(sx,sy,mouseX,mouseY) <= 10) {
         stroke(255,0,0);
       }
       ellipse(sx,sy,dist(sx,sy,mouseX,mouseY)*2,dist(sx,sy,mouseX,mouseY)*2);
@@ -61,9 +61,18 @@ void draw() {
 }
 
 void mousePressed() {
-    for (int i=nodes.size()-1; i>=0; i--) {
-        Particle n = (Node) nodes.get(i);
-        n.splitc();
+    if (mouseButton == LEFT) {
+      for (int i=nodes.size()-1; i>=0; i--) {
+          Particle n = (Node) nodes.get(i);
+          n.splitc();
+      }
+    } else {
+      for (int i=nodes.size()-1; i>=0; i--) {
+          Particle n = (Node) nodes.get(i);
+          if (dist(n.x,n.y,mouseX,mouseY) <= n.orir && nodes.size() > 1) {
+            nodes.remove(i);
+          }
+      } 
     }
 }
 
@@ -106,7 +115,7 @@ class Node {
           y = sy;
           vx = (mouseX - x)/50;
           vy = (mouseY - y)/50;
-          c = color(random(255),random(255),random(255));
+          c = color(random(150,255),random(150,255),random(150,255));
         } else {
           orir = or;
           x = ox;
@@ -118,11 +127,10 @@ class Node {
     };
 
     void splitc() {
-        if (dist(x,y,mouseX,mouseY) <= orir) {
+        if (dist(x,y,mouseX,mouseY) <= orir && orir >= 30) {
           nodes.add(new Node(orir/2,x,y,lerpColor(c,color(255),0.5)));
           orir /= 2;
           c = lerpColor(c,color(0),0.25);
-          h = 0;
         }
     }
 
@@ -131,22 +139,39 @@ class Node {
         toMove = true;
         for (int i=nodes.size()-1; i>=0; i--) {
           Particle n = (Node) nodes.get(i);
-          if (dist(n.x,n.y,x,y) <= (orir + n.orir)) {
-            vx += (x - n.x)/1000;
-            vy += (y - n.y)/1000;
-            toMove = false;
-            c = lerpColor(c,n.c,0.01);
-            orir = lerp(orir,n.orir,0.01);
+          if (dist(n.x,n.y,x,y) <= (orir + n.orir) && dist(n.x,n.y,x,y) != 0) {
+            if (n.orir > orir/4) {
+              vx += (x - n.x)/1000;
+              vy += (y - n.y)/1000;
+              x += vx;
+              y += vy;
+              toMove = false;
+              c = lerpColor(c,n.c,0.01);
+              orir = lerp(orir,n.orir,0.01);
+              dr = orir/5;
+            } else {
+              vx += (n.x - x)/500;
+              vy += (n.y - y)/500;
+              if (dist(n.x,n.y,x,y) <= orir*3/4) {
+                orir += n.orir*3/4;
+                c = lerpColor(c,n.c,0.33);
+                x = lerp(x,n.x,0.33);
+                y = lerp(y,n.y,0.33);
+                nodes.remove(i);
+              }
+            }
           }
         }
-        if (toMove) {vx -= (vx)/10; vy -= (vy)/10;}
-        if (x < orir || x > (width - orir)) {vx = -vx;}
-        if (y < orir || y > (height - orir)) {vy = -vy;}
+        if (toMove) {dr = orir*3/2;}
+        if (x < orir) {vx = -vx; dr = orir/5; x = orir;}
+        if (y < orir) {vy = -vy; dr = orir/5; y = orir;}
+        if (x > (width - orir)) {vx = -vx; dr = orir/5; x = width - orir;}
+        if (y > (height - orir)) {vy = -vy; dr = orir/5; y = height - orir;}
         x += vx;
         y += vy;
-        vx /= 1.00001;
-        vy /= 1.00001;
-        if (dist(r,0,dr,0) < 1) {dr = random(orir/2,orir*3/2);} else {r += (dr - r)/10;}
+        vx /= 1.0001;
+        vy /= 1.0001;
+        if (dist(r,0,dr,0) > 1) {r += (dr - r)/10;}
         fill(c);
         stroke(c);
         ellipse(x,y,r,r);
