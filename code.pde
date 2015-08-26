@@ -10,14 +10,15 @@ float maxs;
 float mins;
 float cp = 100;
 color bgl = color(0);
+boolean valids = true;
+int needClearing = 0;
 
 void setup() {
-    width = window.innerWidth;
-    height = window.innerHeight;
+    width = window.innerWidth - 20;
+    height = window.innerHeight - 20;
     size(width, height);
     nodes = new ArrayList();
     textFont(myfont);
-    strokeWeight(5);
     nodes.add(new Node(width/10,width/2,height/2,color(random(150,255),random(150,255),random(150,255))));
 }
 
@@ -31,28 +32,42 @@ Number.prototype.between = function (min, max) {
 
 
 void draw() {
+    width = window.innerWidth - 20;
+    height = window.innerHeight - 20;
+    size(width, height);
+    strokeWeight(5);
     background(bgl);
     fill(lerpColor(bgl,255,cp/100));
     textAlign(CENTER,CENTER);
-    textSize(width/7);
-    text("BALANCE " + round(cp) + "%",width/2,height/2);
+    textSize(width/5);
+    text("BALANCE",width/2,height/2);
+    //text("BALANCE " + round(cp) + "%",width/2,height/2);
     textAlign(CENTER,BOTTOM);
     textSize(width/45);
     fill(255);
     text("Drag to create cell. Left click to split. Right click to kill.",width/2,height - 10);
     maxs = 0;
     mins = height;
+    valids = true;
+    needClearing = 0;
     for (int i=nodes.size()-1; i>=0; i--) {
         Particle n = (Node) nodes.get(i);
         n.update();
         if (n.orir < mins) {mins = n.orir;} 
         if (n.orir > maxs) {maxs = n.orir;} 
+        if (nodes.size() >= 6 && !n.toMove) {
+          needClearing += 1;
+        }
+        if (n.orir < 1) {
+          nodes.remove(i);
+        }
+        if (i == 0 && needClearing > nodes.size()*3/4) {n.death = true;}
     }
     cp += (round((mins/maxs)*100) - cp)/20;
     if (se) {
       fill(0,0);
       stroke(255);
-      if ((sx + dist(sx,sy,mouseX,mouseY))>width||(sx - dist(sx,sy,mouseX,mouseY))<0||(sy + dist(sx,sy,mouseX,mouseY)) > height || (sy - dist(sx,sy,mouseX,mouseY)) < 0 || dist(sx,sy,mouseX,mouseY) <= 10) {
+      if ((sx + dist(sx,sy,mouseX,mouseY))>width||(sx - dist(sx,sy,mouseX,mouseY))<0||(sy + dist(sx,sy,mouseX,mouseY)) > height || (sy - dist(sx,sy,mouseX,mouseY)) < 0 || dist(sx,sy,mouseX,mouseY) <= 10 || !valids) {
         stroke(255,0,0);
       }
       ellipse(sx,sy,dist(sx,sy,mouseX,mouseY)*2,dist(sx,sy,mouseX,mouseY)*2);
@@ -69,9 +84,7 @@ void mousePressed() {
     } else {
       for (int i=nodes.size()-1; i>=0; i--) {
           Particle n = (Node) nodes.get(i);
-          if (dist(n.x,n.y,mouseX,mouseY) <= n.orir && nodes.size() > 1) {
-            nodes.remove(i);
-          }
+          n.kill();
       } 
     }
 }
@@ -91,7 +104,7 @@ void mouseReleased() {
           (sx + dist(sx,sy,mouseX,mouseY)) < width && 
           (sx - dist(sx,sy,mouseX,mouseY)) > 0 &&
           (sy + dist(sx,sy,mouseX,mouseY)) < height &&
-          (sy - dist(sx,sy,mouseX,mouseY)) > 0 && dist(sx,sy,mouseX,mouseY) > 10) {nodes.add(new Node(0,null,null,null));}
+          (sy - dist(sx,sy,mouseX,mouseY)) > 0 && dist(sx,sy,mouseX,mouseY) > 10 && valids) {nodes.add(new Node(0,null,null,null));}
       se = false;
     }
 }
@@ -106,6 +119,8 @@ class Node {
     float orir;
     float dr;
     boolean toMove = true;
+    boolean death = false;
+    float tick = 0;
     color c;
 
     Node(or,ox,oy,oc) {
@@ -127,37 +142,48 @@ class Node {
     };
 
     void splitc() {
-        if (dist(x,y,mouseX,mouseY) <= orir && orir >= 30) {
-          nodes.add(new Node(orir/2,x,y,lerpColor(c,color(255),0.5)));
-          orir /= 2;
+        if (dist(x,y,mouseX,mouseY) <= orir*3/4 && orir - dist(x,y,mouseX,mouseY) >= 15) {
+          nodes.add(new Node(orir - dist(x,y,mouseX,mouseY),mouseX,mouseY,lerpColor(c,color(255),0.5)));
+          orir -= orir/4 - dist(x,y,mouseX,mouseY)/4;
           c = lerpColor(c,color(0),0.25);
+          tick = 0;
+          vx = 0;
+          vy = 0;
+        }
+    }
+
+    void kill() {
+        if (dist(x,y,mouseX,mouseY) <= orir && nodes.size() > 1) {
+          death = true;
         }
     }
 
     void update() {
+        if (tick < 255) {tick += 1;}
         bgl = lerpColor(bgl,color(255 - red(c),255 - green(c),255 - blue(c)),0.5);
         toMove = true;
         for (int i=nodes.size()-1; i>=0; i--) {
           Particle n = (Node) nodes.get(i);
-          if (dist(n.x,n.y,x,y) <= (orir + n.orir) && dist(n.x,n.y,x,y) != 0) {
-            if (n.orir > orir/4) {
+          if (dist(n.x,n.y,x,y) <= (orir + n.orir) && dist(n.x,n.y,x,y) != 0 && !n.death && !death) {
+            if (n.orir > orir/2 || n.tick < 255) {
               vx += (x - n.x)/1000;
               vy += (y - n.y)/1000;
               x += vx;
               y += vy;
               toMove = false;
-              c = lerpColor(c,n.c,0.01);
+              c = lerpColor(c,n.c,0.03);
+              n.c = lerpColor(n.c,c,0.03);
               orir = lerp(orir,n.orir,0.01);
               dr = orir/5;
             } else {
-              vx += (n.x - x)/500;
-              vy += (n.y - y)/500;
-              if (dist(n.x,n.y,x,y) <= orir*3/4) {
+              vx += (n.x - x)/1000;
+              vy += (n.y - y)/1000;
+              if (dist(n.x,n.y,x,y) <= (r - n.orir/2)) {
                 orir += n.orir*3/4;
                 c = lerpColor(c,n.c,0.33);
-                x = lerp(x,n.x,0.33);
-                y = lerp(y,n.y,0.33);
-                nodes.remove(i);
+                n.death = true;
+                vx = 0;
+                vy = 0;
               }
             }
           }
@@ -167,6 +193,13 @@ class Node {
         if (y < orir) {vy = -vy; dr = orir/5; y = orir;}
         if (x > (width - orir)) {vx = -vx; dr = orir/5; x = width - orir;}
         if (y > (height - orir)) {vy = -vy; dr = orir/5; y = height - orir;}
+        if (death) {
+          if (dist(orir,0,0,0) > 1) {orir -= orir/10;}
+          dr = 0;
+          vx /= 2;
+          vy /= 2;
+        }
+        if (dist(sx,sy,mouseX,mouseY) > dist(sx,sy,x,y)) {valids = false;}
         x += vx;
         y += vy;
         vx /= 1.0001;
