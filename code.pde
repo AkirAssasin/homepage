@@ -12,14 +12,20 @@ float cp = 100;
 color bgl = color(0);
 boolean valids = true;
 int needClearing = 0;
+float width;
+float height;
+float pwidth;
+float pheight;
 
 void setup() {
     width = window.innerWidth - 20;
     height = window.innerHeight - 20;
     size(width, height);
+    pwidth = width;
+    pheight = height;
     nodes = new ArrayList();
     textFont(myfont);
-    nodes.add(new Node(width/10,width/2,height/2,color(random(150,255),random(150,255),random(150,255))));
+    nodes.add(new Node(min(width,height)/5,width/2,height/2,color(random(150,255),random(150,255),random(150,255))));
 }
 
  
@@ -39,11 +45,11 @@ void draw() {
     background(bgl);
     fill(lerpColor(bgl,255,cp/100));
     textAlign(CENTER,CENTER);
-    textSize(width/5);
+    if ((height - width/46) < width/5) {textSize(height - width/46);} else {textSize(width/5);}
     text("BALANCE",width/2,height/2);
     //text("BALANCE " + round(cp) + "%",width/2,height/2);
     textAlign(CENTER,BOTTOM);
-    textSize(width/45);
+    if ((height - width/46) < width/5) {textSize(20);} else {textSize(width/45);}
     fill(255);
     text("Drag to create cell. Left click to split. Right click to kill.",width/2,height - 10);
     maxs = 0;
@@ -73,6 +79,8 @@ void draw() {
       ellipse(sx,sy,dist(sx,sy,mouseX,mouseY)*2,dist(sx,sy,mouseX,mouseY)*2);
       line(sx,sy,mouseX,mouseY);
     }
+    pwidth = width;
+    pheight = height;
 }
 
 void mousePressed() {
@@ -202,8 +210,16 @@ class Node {
         if (dist(sx,sy,mouseX,mouseY) > dist(sx,sy,x,y)) {valids = false;}
         x += vx;
         y += vy;
+        x *= width/pwidth;
+        y *= height/pheight;
         vx /= 1.0001;
         vy /= 1.0001;
+        orir *= width/pwidth;
+        orir *= height/pheight;
+        r *= width/pwidth;
+        r *= height/pheight;
+        dr *= width/pwidth;
+        dr *= height/pheight;
         if (dist(r,0,dr,0) > 1) {r += (dr - r)/10;}
         fill(c);
         stroke(c);
