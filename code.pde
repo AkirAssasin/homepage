@@ -191,10 +191,10 @@ class Node {
           }
         }
         if (toMove) {dr = orir*3/2;}
-        if (x < orir) {vx = -vx; dr = orir/5; x = orir;}
-        if (y < orir) {vy = -vy; dr = orir/5; y = orir;}
-        if (x > (width - orir)) {vx = -vx; dr = orir/5; x = width - orir;}
-        if (y > (height - orir)) {vy = -vy; dr = orir/5; y = height - orir;}
+        if (x < orir) {orir -= 1; vx = -vx; dr = orir/5; x = orir;}
+        if (y < orir) {orir -= 1; vy = -vy; dr = orir/5; y = orir;}
+        if (x > (width - orir)) {orir -= 1; vx = -vx; dr = orir/5; x = width - orir;}
+        if (y > (height - orir)) {orir -= 1; vy = -vy; dr = orir/5; y = height - orir;}
         if (death) {
           if (dist(orir,0,0,0) > 1) {orir -= orir/10;}
           dr = 0;
