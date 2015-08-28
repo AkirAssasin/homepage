@@ -175,7 +175,7 @@ class Node {
               toMove = false;
               c = lerpColor(c,n.c,0.03);
               n.c = lerpColor(n.c,c,0.03);
-              orir = lerp(orir*19/20,n.orir,0.01);
+              orir = lerp(orir,n.orir,0.015);
               dr = orir/5;
             } else {
               vx += (n.x - x)/1000;
