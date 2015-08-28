@@ -18,8 +18,8 @@ float pwidth;
 float pheight;
 
 void setup() {
-    width = window.innerWidth - 20;
-    height = window.innerHeight - 20;
+    width = window.innerWidth;
+    height = window.innerHeight;
     size(width, height);
     pwidth = width;
     pheight = height;
@@ -38,8 +38,8 @@ Number.prototype.between = function (min, max) {
 
 
 void draw() {
-    width = window.innerWidth - 20;
-    height = window.innerHeight - 20;
+    width = window.innerWidth;
+    height = window.innerHeight;
     size(width, height);
     strokeWeight(5);
     background(bgl);
