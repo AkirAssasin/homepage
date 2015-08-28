@@ -11,7 +11,6 @@ float mins;
 float cp = 100;
 color bgl = color(0);
 boolean valids = true;
-int needClearing = 0;
 float width;
 float height;
 float pwidth;
@@ -55,19 +54,14 @@ void draw() {
     maxs = 0;
     mins = height;
     valids = true;
-    needClearing = 0;
     for (int i=nodes.size()-1; i>=0; i--) {
         Particle n = (Node) nodes.get(i);
         n.update();
         if (n.orir < mins) {mins = n.orir;} 
         if (n.orir > maxs) {maxs = n.orir;} 
-        if (nodes.size() >= 6 && !n.toMove) {
-          needClearing += 1;
-        }
         if (n.orir < 1) {
           nodes.remove(i);
         }
-        if (i == 0 && needClearing > nodes.size()*3/4) {n.death = true;}
     }
     cp += (round((mins/maxs)*100) - cp)/20;
     if (se) {
@@ -181,7 +175,7 @@ class Node {
               toMove = false;
               c = lerpColor(c,n.c,0.03);
               n.c = lerpColor(n.c,c,0.03);
-              orir = lerp(orir,n.orir,0.01);
+              orir = lerp(orir*19/20,n.orir,0.01);
               dr = orir/5;
             } else {
               vx += (n.x - x)/1000;
